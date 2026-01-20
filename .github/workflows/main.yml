@@ -1,0 +1,82 @@
+name: Download and Repackage File
+
+on:
+  workflow_dispatch:  # Allows manual trigger from GitHub UI
+  schedule:
+    - cron: '0 0 * * 0'  # Optional: runs weekly on Sunday at midnight UTC
+
+jobs:
+  download-and-repackage:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Download file
+        run: |
+          echo "Downloading file..."
+          curl -L -o bypass-paywalls-chrome-clean-master.zip \
+            "https://gitflic.ru/project/magnolia1234/bpc_uploads/blob/raw?file=bypass-paywalls-chrome-clean-master.zip"
+          
+          echo "File downloaded successfully"
+          ls -lh bypass-paywalls-chrome-clean-master.zip
+      
+      - name: Extract and verify contents
+        run: |
+          echo "Extracting zip file..."
+          unzip -q bypass-paywalls-chrome-clean-master.zip
+          
+          echo "Contents:"
+          ls -lha
+          
+          # Optional: repackage as tar.gz
+          echo "Creating tar.gz archive..."
+          tar -czf bypass-paywalls-chrome-clean-master.tar.gz bypass-paywalls-chrome-clean-master/
+          
+          echo "Archive created"
+          ls -lh *.tar.gz *.zip
+      
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+      
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: release-${{ steps.date.outputs.date }}-${{ github.run_number }}
+          release_name: Bypass Paywalls ${{ steps.date.outputs.date }}
+          draft: false
+          prerelease: false
+      
+      - name: Upload ZIP to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./bypass-paywalls-chrome-clean-master.zip
+          asset_name: bypass-paywalls-chrome-clean-master.zip
+          asset_content_type: application/zip
+      
+      - name: Upload TAR.GZ to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./bypass-paywalls-chrome-clean-master.tar.gz
+          asset_name: bypass-paywalls-chrome-clean-master.tar.gz
+          asset_content_type: application/gzip
+      
+      - name: Upload as workflow artifact (alternative)
+        uses: actions/upload-artifact@v4
+        with:
+          name: bypass-paywalls-files
+          path: |
+            bypass-paywalls-chrome-clean-master.zip
+            bypass-paywalls-chrome-clean-master.tar.gz
+          retention-days: 90
