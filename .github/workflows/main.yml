@@ -2,8 +2,6 @@ name: Download and Repackage File
 
 on:
   workflow_dispatch:  # Allows manual trigger from GitHub UI
-  schedule:
-    - cron: '0 0 * * 0'  # Optional: runs weekly on Sunday at midnight UTC
 
 jobs:
   download-and-repackage:
